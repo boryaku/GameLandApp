@@ -15,6 +15,7 @@ import { InAppBrowser } from '@ionic-native/in-app-browser';
 import { Broadcaster } from '@ionic-native/broadcaster';
 import { IonicStorageModule } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
+import { Network } from '@ionic-native/network';
 
 @NgModule({
   declarations: [
@@ -42,6 +43,7 @@ import { Device } from '@ionic-native/device';
     InAppBrowser,
     Broadcaster,
     Device,
+    Network,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })
