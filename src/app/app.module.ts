@@ -16,6 +16,8 @@ import { Broadcaster } from '@ionic-native/broadcaster';
 import { IonicStorageModule } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
 import { Network } from '@ionic-native/network';
+import { HttpModule } from '@angular/http';
+
 
 @NgModule({
   declarations: [
@@ -27,7 +29,8 @@ import { Network } from '@ionic-native/network';
   imports: [
     BrowserModule,
     IonicModule.forRoot(MyApp),
-    IonicStorageModule.forRoot()
+    IonicStorageModule.forRoot(),
+    HttpModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [
