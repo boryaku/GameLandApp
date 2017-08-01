@@ -1,0 +1,1 @@
+am broadcast -a com.android.vending.INSTALL_REFERRER --es "referrer" "utm_source%3Dtest%26utm_medium%3Dtester"
