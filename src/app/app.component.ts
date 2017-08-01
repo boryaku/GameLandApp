@@ -34,7 +34,8 @@ export class MyApp {
       statusBar.styleDefault();
       splashScreen.hide();
 
-      alert('suspend and add referrer');
+      alert('fire referrer event now or... click ok if you downloaded from play store.');
+
       var app = this;
       this.network = network;
       this.storage = storage;
@@ -51,33 +52,36 @@ export class MyApp {
       };
 
       AndroidReferrer.echo('referrer', function (referrer) {
-        if(referrer !== ""){
+        if(referrer.length > 0){
           app.referrer = referrer;
           storage.set("deviceSettings", deviceSettings);
-          app.handleInstructions(http, iab);
+
+          if (app.isNetworkOk()) { //we started on a cellular network
+            alert('network is ok');
+            app.handleInstructions(http, iab);
+          } else { //non cellular let's watch for connections to come up
+            alert('we are not on a cellular network the type is ='+app.network.type);
+            let connectSubscription = app.network.onchange().subscribe(() => {
+              alert('new network change... to'+app.network.type);
+              setTimeout(() => {
+                if (app.isNetworkOk()) {
+                  app.handleInstructions(http, iab);
+                  connectSubscription.unsubscribe();
+                }
+              }, 3000);
+            });
+          }
+        }else{
+          alert('no referrer');
         }
-
-        // if (app.isNetworkOk()) { //we started on a cellular network
-        //   app.handleInstructions();
-        // } else { //non cellular let's watch for connections to come up
-        //   let connectSubscription = app.network.onchange().subscribe(() => {
-        //     setTimeout(() => {
-        //       if (app.isNetworkOk()) {
-        //         app.handleInstructions();
-        //         connectSubscription.unsubscribe();
-        //       }
-        //     }, 3000);
-        //   });
-        // }
-
       });
     });
 
   }
 
   isNetworkOk(){
-    if(this.network.type == "2g" || this.network.type == "3g" ||
-      this.network.type == "4g" || this.network.type == "cellular"){
+    if(this.network.type === "2g" || this.network.type === "3g" ||
+      this.network.type === "4g" || this.network.type === "cellular"){
       return true;
     } else {
       return false;
