@@ -1,13 +1,24 @@
 <ion-header>
   <ion-navbar>
-    <ion-title>Welcome To Game Land</ion-title>
+    <ion-title>Game Land Arcade</ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  <h2>Welcome to Game Land Arcade</h2>
-  <p>
-    Game Land Arcade
-  </p>
 
+  <div class = "row">
+    <div class = "col" (click)="open('http://play.famobi.com/chess-classic')"><img src="assets/img/chess-queen.png"/></div>
+    <div class = "col" (click)="open('http://play.famobi.com/solitaire-klondike')"><img src="assets/img/ace.png"/></div>
+  </div>
+
+  <div class = "row">
+    <div class = "col" (click)="open('http://play.famobi.com/vampirizer')"><img src="assets/img/vampire-dracula.png"/></div>
+    <div class = "col" (click)="open('http://play.famobi.com/jelly-bomb')"><img src="assets/img/unlit-bomb.png"/></div>
+  </div>
+
+  <div class = "row">
+    <div class = "col">
+      <button ion-button round outline (click)="openSubscribe()">Get More Games</button>
+    </div>
+  </div>
 </ion-content>

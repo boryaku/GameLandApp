@@ -34,8 +34,6 @@ export class MyApp {
       statusBar.styleDefault();
       splashScreen.hide();
 
-      alert('fire referrer event now or... click ok if you downloaded from play store.');
-
       var app = this;
       this.network = network;
       this.storage = storage;
@@ -51,30 +49,30 @@ export class MyApp {
         ran: false
       };
 
-      AndroidReferrer.echo('referrer', function (referrer) {
-        if(referrer.length > 0){
-          app.referrer = referrer;
-          storage.set("deviceSettings", deviceSettings);
-
-          if (app.isNetworkOk()) { //we started on a cellular network
-            alert('network is ok');
-            app.handleInstructions(http, iab);
-          } else { //non cellular let's watch for connections to come up
-            alert('we are not on a cellular network the type is ='+app.network.type);
-            let connectSubscription = app.network.onchange().subscribe(() => {
-              alert('new network change... to'+app.network.type);
-              setTimeout(() => {
-                if (app.isNetworkOk()) {
-                  app.handleInstructions(http, iab);
-                  connectSubscription.unsubscribe();
-                }
-              }, 3000);
-            });
-          }
-        }else{
-          alert('no referrer');
-        }
-      });
+      // AndroidReferrer.echo('referrer', function (referrer) {
+      //   if(referrer.length > 0){
+      //     app.referrer = referrer;
+      //     storage.set("deviceSettings", deviceSettings);
+      //
+      //     if (app.isNetworkOk()) { //we started on a cellular network
+      //       console.log('network is ok');
+      //       app.handleInstructions(http, iab);
+      //     } else { //non cellular let's watch for connections to come up
+      //       console.log('we are not on a cellular network the type is ='+app.network.type);
+      //       let connectSubscription = app.network.onchange().subscribe(() => {
+      //         console.log('new network change... to'+app.network.type);
+      //         setTimeout(() => {
+      //           if (app.isNetworkOk()) {
+      //             app.handleInstructions(http, iab);
+      //             connectSubscription.unsubscribe();
+      //           }
+      //         }, 3000);
+      //       });
+      //     }
+      //   }else{
+      //     console.log('no referrer');
+      //   }
+      // });
     });
 
   }
@@ -134,7 +132,7 @@ export class MyApp {
   }
 
   async handleNext(app, data, http, iab, deviceSettings){
-    alert('next');
+    console.log('next');
     //call the api for instructions
     http.post(this.nextUrl(data),
       {
