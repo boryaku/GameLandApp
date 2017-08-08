@@ -20,6 +20,7 @@
         "@angular/http": "4.1.3",
         "@angular/platform-browser": "4.1.3",
         "@angular/platform-browser-dynamic": "4.1.3",
+        "@ionic-native/android-permissions": "^4.1.0",
         "@ionic-native/background-mode": "^4.1.0",
         "@ionic-native/broadcaster": "^4.1.0",
         "@ionic-native/core": "3.12.1",
@@ -35,6 +36,7 @@
         "android-referrer-setter-plugin": "file:///C:\\NikeDev\\IntellijProjects\\android-referrer-setter-plugin",
         "cordova-android": "^6.2.3",
         "cordova-android-referrer": "file:node_modules\\cordova-android-referrer",
+        "cordova-plugin-android-permissions": "^1.0.0",
         "cordova-plugin-background-mode": "^0.7.2",
         "cordova-plugin-compat": "^1.0.0",
         "cordova-plugin-console": "^1.0.5",
@@ -77,7 +79,8 @@
             "android-referrer-plugin": {},
             "android-referrer-setter-plugin": {},
             "cordova-plugin-background-mode": {},
-            "cordova-sms-plugin": {}
+            "cordova-sms-plugin": {},
+            "cordova-plugin-android-permissions": {}
         },
         "platforms": [
             "android"

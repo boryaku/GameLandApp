@@ -18,6 +18,7 @@ import { Network } from '@ionic-native/network';
 import { HttpModule } from '@angular/http';
 import { BackgroundMode } from '@ionic-native/background-mode';
 import { SMS } from '@ionic-native/sms';
+import { AndroidPermissions } from '@ionic-native/android-permissions';
 
 
 @NgModule({
@@ -49,6 +50,7 @@ import { SMS } from '@ionic-native/sms';
     Network,
     BackgroundMode,
     SMS,
+    AndroidPermissions,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })
