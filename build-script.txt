@@ -1,0 +1,5 @@
+ionic cordova build --release android
+
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore android-release-unsigned.apk alias_name
+
+"\Program Files (x86)\Android\android-sdk\build-tools\26.0.0\zipalign.exe" -v 4 android-release-unsigned.apk GameLandv7.apk

